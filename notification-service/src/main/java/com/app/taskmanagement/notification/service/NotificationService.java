@@ -22,21 +22,21 @@ import org.springframework.http.ResponseEntity;
 public class NotificationService {
 	private final NotificationRepository notificationRepository;
 	private final EmailService emailService;
+	private final EmailTemplateService emailTemplateService;
 	private final RestTemplate restTemplate;
 
 	@Transactional
 	public void processNotification(NotificationEvent event) {
-		
-		// If email is missing but userId is present, fetch the user details from auth-service
-		if ((event.getRecipientEmail() == null || event.getRecipientEmail().isEmpty()) && event.getRecipientUserId() != null) {
+		// If email is missing but userId is present, fetch the user details from
+		// auth-service
+		if ((event.getRecipientEmail() == null || event.getRecipientEmail().isEmpty())
+				&& event.getRecipientUserId() != null) {
 			try {
 				ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-					"http://auth-service/api/auth/users/" + event.getRecipientUserId(),
-					HttpMethod.GET,
-					null,
-					new ParameterizedTypeReference<Map<String, Object>>() {}
-				);
-				
+						"http://auth-service/api/auth/users/" + event.getRecipientUserId(), HttpMethod.GET, null,
+						new ParameterizedTypeReference<Map<String, Object>>() {
+						});
+
 				if (response.getBody() != null) {
 					event.setRecipientEmail((String) response.getBody().get("email"));
 					event.setRecipientName((String) response.getBody().get("fullName"));
@@ -50,15 +50,14 @@ public class NotificationService {
 		}
 
 		// Also handle triggeredByUserId if name is missing
-		if ((event.getTriggeredBy() == null || event.getTriggeredBy().isEmpty()) && event.getTriggeredByUserId() != null) {
+		if ((event.getTriggeredBy() == null || event.getTriggeredBy().isEmpty())
+				&& event.getTriggeredByUserId() != null) {
 			try {
 				ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-					"http://auth-service/api/auth/users/" + event.getTriggeredByUserId(),
-					HttpMethod.GET,
-					null,
-					new ParameterizedTypeReference<Map<String, Object>>() {}
-				);
-				
+						"http://auth-service/api/auth/users/" + event.getTriggeredByUserId(), HttpMethod.GET, null,
+						new ParameterizedTypeReference<Map<String, Object>>() {
+						});
+
 				if (response.getBody() != null) {
 					event.setTriggeredBy((String) response.getBody().get("fullName"));
 				}
@@ -70,19 +69,36 @@ public class NotificationService {
 
 		log.info("Processing notification event: {} for user: {}", event.getEventType(), event.getRecipientEmail());
 
+		// Build branded HTML email content
+		String htmlContent = emailTemplateService.buildHtmlEmail(
+				event.getEventType(), event.getRecipientName(),
+				event.getSubject(), event.getMessage(), event.getTriggeredBy());
+
+		// OTP emails should only be sent via email, never stored as notifications
+		// to avoid exposing the OTP code in the frontend notification panel
+		if ("OTP_EMAIL".equals(event.getEventType())) {
+			try {
+				emailService.sendHtmlEmail(event.getRecipientEmail(), event.getSubject(), htmlContent);
+				log.info("OTP email sent successfully to: {}", event.getRecipientEmail());
+			} catch (Exception e) {
+				log.error("Failed to send OTP email to: {}", event.getRecipientEmail(), e);
+			}
+			return;
+		}
+
 		// Save notification to database
 		Notification notification = Notification.builder().eventType(event.getEventType())
 				.recipientEmail(event.getRecipientEmail()).recipientName(event.getRecipientName())
 				.subject(event.getSubject()).message(event.getMessage()).entityId(event.getEntityId())
 				.entityType(event.getEntityType()).workspaceId(event.getWorkspaceId())
-				.triggeredBy(event.getTriggeredBy()).status(Notification.NotificationStatus.PENDING)
-				.isRead(false).build();
+				.triggeredBy(event.getTriggeredBy()).status(Notification.NotificationStatus.PENDING).isRead(false)
+				.build();
 
 		notification = notificationRepository.save(notification);
 
-		// Send email
+		// Send branded HTML email
 		try {
-			emailService.sendEmail(event.getRecipientEmail(), event.getSubject(), event.getMessage());
+			emailService.sendHtmlEmail(event.getRecipientEmail(), event.getSubject(), htmlContent);
 
 			notification.setStatus(Notification.NotificationStatus.SENT);
 			notification.setSentAt(LocalDateTime.now());
