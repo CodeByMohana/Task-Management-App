@@ -22,7 +22,8 @@ import java.util.List;
 public class JwtCookieAuthenticationFilter implements GlobalFilter, Ordered {
 
 	private static final List<String> PUBLIC_PATHS = List.of("/api/auth/login", "/api/auth/register",
-			"/api/auth/refresh", "/api/auth/logout", "/swagger-ui.html", "/auth/api-docs", "/workspace/api-docs",
+			"/api/auth/refresh", "/api/auth/logout", "/api/auth/send-otp", "/api/auth/forgot-password/reset",
+			"/swagger-ui.html", "/auth/api-docs", "/workspace/api-docs",
 			"/board/api-docs", "/card/api-docs", "/comment/api-docs", "/label/api-docs", "/notification/api-docs");
 
 	private static final List<String> PUBLIC_PREFIXES = List.of("/oauth2/", "/swagger-ui/", "/v3/api-docs/",
