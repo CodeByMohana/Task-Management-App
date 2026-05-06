@@ -35,12 +35,10 @@ public class SecurityConfig {
 				// STATELESS breaks this — IF_REQUIRED creates a session only when needed.
 				.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 				.authorizeHttpRequests(auth -> auth
-<<<<<<< Updated upstream
-						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/oauth2/**",
-=======
-						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/send-otp", "/api/auth/forgot-password/reset", "/oauth2/**",
->>>>>>> Stashed changes
-								"/login/**", "/api/auth/users/**", // Spring Security OAuth2 internal callback path
+
+						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh",
+								"/api/auth/send-otp", "/api/auth/forgot-password/reset", "/oauth2/**", "/login/**",
+								"/api/auth/users/**", // Spring Security OAuth2 internal callback path
 								"/swagger-ui/**", "/api-docs/**", "/v3/api-docs/**")
 						.permitAll().requestMatchers("/api/admin/**").hasRole("PLATFORM_ADMIN").anyRequest()
 						.authenticated())

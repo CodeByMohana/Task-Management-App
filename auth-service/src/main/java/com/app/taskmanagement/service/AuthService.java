@@ -8,11 +8,9 @@ import com.app.taskmanagement.dto.LoginRequest;
 import com.app.taskmanagement.dto.RegisterRequest;
 import com.app.taskmanagement.dto.UpdateProfileRequest;
 import com.app.taskmanagement.dto.UserResponse;
-<<<<<<< Updated upstream
-=======
+
 import com.app.taskmanagement.dto.SendOtpRequest;
 import com.app.taskmanagement.dto.ResetPasswordRequest;
->>>>>>> Stashed changes
 
 public interface AuthService {
 
@@ -20,13 +18,10 @@ public interface AuthService {
 
 	AuthResponse login(LoginRequest request);
 
-<<<<<<< Updated upstream
-=======
 	void sendOtp(SendOtpRequest request);
 
 	void resetPassword(ResetPasswordRequest request);
 
->>>>>>> Stashed changes
 	void logout(String refreshToken);
 
 	AuthResponse refreshToken(String refreshToken);

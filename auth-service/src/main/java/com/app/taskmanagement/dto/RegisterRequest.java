@@ -22,10 +22,7 @@ public class RegisterRequest {
 	@NotBlank
 	@Size(min = 8, message = "Password must be at least 8 characters")
 	private String password;
-<<<<<<< Updated upstream
-=======
 
 	@NotBlank
 	private String otp;
->>>>>>> Stashed changes
 }

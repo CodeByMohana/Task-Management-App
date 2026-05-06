@@ -1,28 +1,12 @@
 package com.app.taskmanagement.service;
 
-import com.app.taskmanagement.dto.AuthResponse;
-import com.app.taskmanagement.dto.ChangePasswordRequest;
-import com.app.taskmanagement.dto.LoginRequest;
-import com.app.taskmanagement.dto.RegisterRequest;
-import com.app.taskmanagement.dto.UpdateProfileRequest;
-import com.app.taskmanagement.dto.UserResponse;
-<<<<<<< Updated upstream
-=======
-import com.app.taskmanagement.dto.SendOtpRequest;
-import com.app.taskmanagement.dto.ResetPasswordRequest;
->>>>>>> Stashed changes
+import com.app.taskmanagement.dto.*;
 import com.app.taskmanagement.entity.User;
 import com.app.taskmanagement.exception.BadRequestException;
 import com.app.taskmanagement.exception.DuplicateResourceException;
 import com.app.taskmanagement.exception.ResourceNotFoundException;
 import com.app.taskmanagement.repository.UserRepository;
 import com.app.taskmanagement.security.JwtTokenProvider;
-import com.app.taskmanagement.service.AuthService;
-import com.app.taskmanagement.service.RefreshTokenService;
-<<<<<<< Updated upstream
-=======
-import com.app.taskmanagement.service.OtpService;
->>>>>>> Stashed changes
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -39,37 +23,36 @@ public class AuthServiceImpl implements AuthService {
 	private final RefreshTokenService refreshTokenService;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final PasswordEncoder passwordEncoder;
-<<<<<<< Updated upstream
-=======
 	private final OtpService otpService;
->>>>>>> Stashed changes
 
 	@Override
 	@Transactional
 	public AuthResponse register(RegisterRequest request) {
+
 		if (userRepository.existsByEmail(request.getEmail())) {
 			throw new DuplicateResourceException("Email already registered");
 		}
+
 		if (userRepository.existsByUsername(request.getUsername())) {
 			throw new DuplicateResourceException("Username already taken");
 		}
 
-<<<<<<< Updated upstream
-=======
+		// ✅ Verify OTP before registration
 		otpService.verifyOtp(request.getEmail(), request.getOtp(), "VERIFICATION");
 
->>>>>>> Stashed changes
 		User user = User.builder().fullName(request.getFullName()).email(request.getEmail())
 				.username(request.getUsername()).passwordHash(passwordEncoder.encode(request.getPassword()))
 				.role(User.Role.MEMBER).provider("local").isActive(true).build();
 
 		userRepository.save(user);
+
 		return buildAuthResponse(user);
 	}
 
 	@Override
 	@Transactional
 	public AuthResponse login(LoginRequest request) {
+
 		User user = userRepository.findByEmail(request.getEmail())
 				.orElseThrow(() -> new BadRequestException("Invalid email or password"));
 
@@ -90,9 +73,8 @@ public class AuthServiceImpl implements AuthService {
 
 	@Override
 	@Transactional
-<<<<<<< Updated upstream
-=======
 	public void sendOtp(SendOtpRequest request) {
+
 		if ("VERIFICATION".equals(request.getType())) {
 			if (userRepository.existsByEmail(request.getEmail())) {
 				throw new DuplicateResourceException("Email already registered");
@@ -111,6 +93,7 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	@Transactional
 	public void resetPassword(ResetPasswordRequest request) {
+
 		User user = userRepository.findByEmail(request.getEmail())
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -118,16 +101,19 @@ public class AuthServiceImpl implements AuthService {
 			throw new BadRequestException("OAuth users cannot reset password");
 		}
 
+		// ✅ Verify OTP before resetting password
 		otpService.verifyOtp(request.getEmail(), request.getOtp(), "FORGOT_PASSWORD");
 
 		user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+
+		// revoke all existing sessions
 		refreshTokenService.revokeAllUserTokens(user);
+
 		userRepository.save(user);
 	}
 
 	@Override
 	@Transactional
->>>>>>> Stashed changes
 	public void logout(String rawRefreshToken) {
 		User user = refreshTokenService.validateAndGetUser(rawRefreshToken);
 		refreshTokenService.revokeAllUserTokens(user);
@@ -136,6 +122,7 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	@Transactional
 	public AuthResponse refreshToken(String rawRefreshToken) {
+
 		User user = refreshTokenService.validateAndGetUser(rawRefreshToken);
 
 		if (!user.isActive()) {
@@ -143,6 +130,7 @@ public class AuthServiceImpl implements AuthService {
 		}
 
 		refreshTokenService.revokeAllUserTokens(user);
+
 		return buildAuthResponse(user);
 	}
 
@@ -155,6 +143,7 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	@Transactional
 	public UserResponse updateProfile(int userId, UpdateProfileRequest request) {
+
 		User user = findUserById(userId);
 
 		if (StringUtils.hasText(request.getUsername()) && !request.getUsername().equals(user.getUsername())) {
@@ -163,9 +152,11 @@ public class AuthServiceImpl implements AuthService {
 			}
 			user.setUsername(request.getUsername());
 		}
+
 		if (StringUtils.hasText(request.getFullName())) {
 			user.setFullName(request.getFullName());
 		}
+
 		if (StringUtils.hasText(request.getAvatarUrl())) {
 			user.setAvatarUrl(request.getAvatarUrl());
 		}
@@ -176,20 +167,25 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	@Transactional
 	public void changePassword(int userId, ChangePasswordRequest request) {
+
 		User user = findUserById(userId);
 
 		if (!"local".equals(user.getProvider())) {
 			throw new BadRequestException("OAuth users cannot change password");
 		}
+
 		if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
 			throw new BadRequestException("Current password is incorrect");
 		}
+
 		if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
 			throw new BadRequestException("New password must differ from current password");
 		}
 
 		user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+
 		refreshTokenService.revokeAllUserTokens(user);
+
 		userRepository.save(user);
 	}
 
@@ -222,7 +218,7 @@ public class AuthServiceImpl implements AuthService {
 		return userRepository.findByFullNameContainingIgnoreCase(query).stream().map(UserResponse::from).toList();
 	}
 
-	// ─── Private Helpers ─────────────────────────────────────────────────────
+	// ─── Helper Methods ─────────────────────────
 
 	private User findUserById(int userId) {
 		return userRepository.findById(userId)
@@ -230,11 +226,13 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	private AuthResponse buildAuthResponse(User user) {
+
 		String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId(), user.getEmail(),
 				user.getRole().name());
-		String rawRefreshToken = refreshTokenService.createRefreshToken(user);
 
-		return AuthResponse.builder().accessToken(accessToken).refreshToken(rawRefreshToken).tokenType("Bearer")
+		String refreshToken = refreshTokenService.createRefreshToken(user);
+
+		return AuthResponse.builder().accessToken(accessToken).refreshToken(refreshToken).tokenType("Bearer")
 				.user(UserResponse.from(user)).build();
 	}
 }
