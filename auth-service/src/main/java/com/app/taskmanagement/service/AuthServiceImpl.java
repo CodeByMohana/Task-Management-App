@@ -6,6 +6,11 @@ import com.app.taskmanagement.dto.LoginRequest;
 import com.app.taskmanagement.dto.RegisterRequest;
 import com.app.taskmanagement.dto.UpdateProfileRequest;
 import com.app.taskmanagement.dto.UserResponse;
+<<<<<<< Updated upstream
+=======
+import com.app.taskmanagement.dto.SendOtpRequest;
+import com.app.taskmanagement.dto.ResetPasswordRequest;
+>>>>>>> Stashed changes
 import com.app.taskmanagement.entity.User;
 import com.app.taskmanagement.exception.BadRequestException;
 import com.app.taskmanagement.exception.DuplicateResourceException;
@@ -14,6 +19,10 @@ import com.app.taskmanagement.repository.UserRepository;
 import com.app.taskmanagement.security.JwtTokenProvider;
 import com.app.taskmanagement.service.AuthService;
 import com.app.taskmanagement.service.RefreshTokenService;
+<<<<<<< Updated upstream
+=======
+import com.app.taskmanagement.service.OtpService;
+>>>>>>> Stashed changes
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,6 +39,10 @@ public class AuthServiceImpl implements AuthService {
 	private final RefreshTokenService refreshTokenService;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final PasswordEncoder passwordEncoder;
+<<<<<<< Updated upstream
+=======
+	private final OtpService otpService;
+>>>>>>> Stashed changes
 
 	@Override
 	@Transactional
@@ -41,6 +54,11 @@ public class AuthServiceImpl implements AuthService {
 			throw new DuplicateResourceException("Username already taken");
 		}
 
+<<<<<<< Updated upstream
+=======
+		otpService.verifyOtp(request.getEmail(), request.getOtp(), "VERIFICATION");
+
+>>>>>>> Stashed changes
 		User user = User.builder().fullName(request.getFullName()).email(request.getEmail())
 				.username(request.getUsername()).passwordHash(passwordEncoder.encode(request.getPassword()))
 				.role(User.Role.MEMBER).provider("local").isActive(true).build();
@@ -72,6 +90,44 @@ public class AuthServiceImpl implements AuthService {
 
 	@Override
 	@Transactional
+<<<<<<< Updated upstream
+=======
+	public void sendOtp(SendOtpRequest request) {
+		if ("VERIFICATION".equals(request.getType())) {
+			if (userRepository.existsByEmail(request.getEmail())) {
+				throw new DuplicateResourceException("Email already registered");
+			}
+		} else if ("FORGOT_PASSWORD".equals(request.getType())) {
+			if (!userRepository.existsByEmail(request.getEmail())) {
+				throw new ResourceNotFoundException("No user found with this email");
+			}
+		} else {
+			throw new BadRequestException("Invalid OTP type");
+		}
+
+		otpService.generateAndSendOtp(request.getEmail(), request.getType());
+	}
+
+	@Override
+	@Transactional
+	public void resetPassword(ResetPasswordRequest request) {
+		User user = userRepository.findByEmail(request.getEmail())
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+		if (!"local".equals(user.getProvider())) {
+			throw new BadRequestException("OAuth users cannot reset password");
+		}
+
+		otpService.verifyOtp(request.getEmail(), request.getOtp(), "FORGOT_PASSWORD");
+
+		user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+		refreshTokenService.revokeAllUserTokens(user);
+		userRepository.save(user);
+	}
+
+	@Override
+	@Transactional
+>>>>>>> Stashed changes
 	public void logout(String rawRefreshToken) {
 		User user = refreshTokenService.validateAndGetUser(rawRefreshToken);
 		refreshTokenService.revokeAllUserTokens(user);
