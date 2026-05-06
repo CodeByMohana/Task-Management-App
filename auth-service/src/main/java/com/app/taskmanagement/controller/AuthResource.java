@@ -20,6 +20,11 @@ import com.app.taskmanagement.dto.RefreshTokenRequest;
 import com.app.taskmanagement.dto.RegisterRequest;
 import com.app.taskmanagement.dto.UpdateProfileRequest;
 import com.app.taskmanagement.dto.UserResponse;
+<<<<<<< Updated upstream
+=======
+import com.app.taskmanagement.dto.SendOtpRequest;
+import com.app.taskmanagement.dto.ResetPasswordRequest;
+>>>>>>> Stashed changes
 import com.app.taskmanagement.service.AuthService;
 
 import java.util.List;
@@ -34,6 +39,23 @@ public class AuthResource {
 
 	// ─── Public Endpoints ────────────────────────────────────────────────────
 
+<<<<<<< Updated upstream
+=======
+	@PostMapping("/send-otp")
+	@Operation(summary = "Send OTP for verification or password reset")
+	public ResponseEntity<Void> sendOtp(@Valid @RequestBody SendOtpRequest request) {
+		authService.sendOtp(request);
+		return ResponseEntity.ok().build();
+	}
+
+	@PostMapping("/forgot-password/reset")
+	@Operation(summary = "Reset password using OTP")
+	public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+		authService.resetPassword(request);
+		return ResponseEntity.ok().build();
+	}
+
+>>>>>>> Stashed changes
 	@PostMapping("/register")
 	@Operation(summary = "Register a new user")
 	public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
