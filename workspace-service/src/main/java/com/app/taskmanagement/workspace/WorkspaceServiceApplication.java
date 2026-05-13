@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServic
 import org.springframework.cache.annotation.EnableCaching;
 
 @SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)
+@EnableCaching
 public class WorkspaceServiceApplication {
 
 	public static void main(String[] args) {

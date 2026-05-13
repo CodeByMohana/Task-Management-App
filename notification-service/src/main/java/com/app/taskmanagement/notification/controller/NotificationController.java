@@ -1,5 +1,6 @@
 package com.app.taskmanagement.notification.controller;
 
+import com.app.taskmanagement.notification.dto.NotificationPage;
 import com.app.taskmanagement.notification.entity.Notification;
 import com.app.taskmanagement.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +19,20 @@ public class NotificationController {
 
 	private final NotificationService notificationService;
 
+//	@GetMapping
+//	public ResponseEntity<Page<Notification>> getMyNotifications(Authentication authentication,
+//			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+//		String email = authentication.getName();
+//		Page<Notification> notifications = notificationService.getUserNotifications(email, PageRequest.of(page, size));
+//		return ResponseEntity.ok(notifications);
+//	}
+
 	@GetMapping
 	public ResponseEntity<Page<Notification>> getMyNotifications(Authentication authentication,
 			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
 		String email = authentication.getName();
-		Page<Notification> notifications = notificationService.getUserNotifications(email, PageRequest.of(page, size));
+		NotificationPage notificationPage = notificationService.getUserNotifications(email, PageRequest.of(page, size));
+		Page<Notification> notifications = notificationPage.toPage();
 		return ResponseEntity.ok(notifications);
 	}
 

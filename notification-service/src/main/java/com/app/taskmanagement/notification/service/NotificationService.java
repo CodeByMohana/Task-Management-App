@@ -1,6 +1,7 @@
 package com.app.taskmanagement.notification.service;
 
 import com.app.taskmanagement.notification.dto.NotificationEvent;
+import com.app.taskmanagement.notification.dto.NotificationPage;
 import com.app.taskmanagement.notification.entity.Notification;
 import com.app.taskmanagement.notification.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Map;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +30,8 @@ public class NotificationService {
 	private final RestTemplate restTemplate;
 
 	@Transactional
+	@Caching(evict = { @CacheEvict(value = "userNotifications", allEntries = true),
+			@CacheEvict(value = "unreadCount", allEntries = true) })
 	public void processNotification(NotificationEvent event) {
 		// If email is missing but userId is present, fetch the user details from
 		// auth-service
@@ -70,8 +76,7 @@ public class NotificationService {
 		log.info("Processing notification event: {} for user: {}", event.getEventType(), event.getRecipientEmail());
 
 		// Build branded HTML email content
-		String htmlContent = emailTemplateService.buildHtmlEmail(
-				event.getEventType(), event.getRecipientName(),
+		String htmlContent = emailTemplateService.buildHtmlEmail(event.getEventType(), event.getRecipientName(),
 				event.getSubject(), event.getMessage(), event.getTriggeredBy());
 
 		// OTP emails should only be sent via email, never stored as notifications
@@ -112,15 +117,24 @@ public class NotificationService {
 		notificationRepository.save(notification);
 	}
 
-	public Page<Notification> getUserNotifications(String email, Pageable pageable) {
-		return notificationRepository.findByRecipientEmailOrderByCreatedAtDesc(email, pageable);
+//	@Cacheable(value = "userNotifications", key = "#email + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
+//	public Page<Notification> getUserNotifications(String email, Pageable pageable) {
+//		return notificationRepository.findByRecipientEmailOrderByCreatedAtDesc(email, pageable);
+//	}
+	@Cacheable(value = "userNotifications", key = "#email + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
+	public NotificationPage getUserNotifications(String email, Pageable pageable) {
+		Page<Notification> page = notificationRepository.findByRecipientEmailOrderByCreatedAtDesc(email, pageable);
+		return NotificationPage.from(page);
 	}
 
+	@Cacheable(value = "unreadCount", key = "#email")
 	public long getUnreadCount(String email) {
 		return notificationRepository.countByRecipientEmailAndIsRead(email, false);
 	}
 
 	@Transactional
+	@Caching(evict = { @CacheEvict(value = "userNotifications", allEntries = true),
+			@CacheEvict(value = "unreadCount", key = "#email") })
 	public void markAsRead(Long id, String email) {
 		notificationRepository.findById(id).ifPresent(n -> {
 			if (n.getRecipientEmail().equals(email)) {
@@ -131,6 +145,8 @@ public class NotificationService {
 	}
 
 	@Transactional
+	@Caching(evict = { @CacheEvict(value = "userNotifications", allEntries = true),
+			@CacheEvict(value = "unreadCount", key = "#email") })
 	public void markAllAsRead(String email) {
 		notificationRepository.markAllAsReadByEmail(email);
 	}

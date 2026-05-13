@@ -41,6 +41,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 	// ─── Create ───────────────────────────────────────────────────────────────
 
 	@Override
+	@Caching(evict = { @CacheEvict(value = "publicWorkspaces", allEntries = true),
+			@CacheEvict(value = "userWorkspaces", key = "#creatorUserId") })
 	public WorkspaceResponse createWorkspace(CreateWorkspaceRequest request, int creatorUserId) {
 		// Build the workspace entity from the request data
 		Workspace workspace = Workspace.builder().name(request.getName()).description(request.getDescription())
@@ -68,6 +70,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
 	@Override
 	@Transactional(readOnly = true) // readOnly = true → DB optimization, no write locks needed
+	@Cacheable(value = "workspace", key = "#workspaceId + '_' + #requestingUserId")
 	public WorkspaceResponse getWorkspace(int workspaceId, int requestingUserId) {
 		Workspace workspace = findWorkspaceById(workspaceId);
 
@@ -84,6 +87,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
 	@Override
 	@Transactional(readOnly = true)
+	@Cacheable(value = "userWorkspaces", key = "#userId")
 	public List<WorkspaceResponse> getMyWorkspaces(int userId) {
 		// Fetch all workspaces where this user is a member
 		return new ArrayList<>(workspaceRepository.findAllByMemberUserId(userId).stream()
@@ -93,6 +97,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
 	@Override
 	@Transactional(readOnly = true)
+	@Cacheable(value = "publicWorkspaces")
 	public List<WorkspaceResponse> getPublicWorkspaces() {
 		return new ArrayList<>(
 				workspaceRepository.findAllPublic().stream().map(w -> WorkspaceResponse.from(w, false)).toList());
@@ -101,6 +106,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 	// ─── Update ───────────────────────────────────────────────────────────────
 
 	@Override
+	@Caching(put = { @CachePut(value = "workspace", key = "#workspaceId") }, evict = {
+			@CacheEvict(value = "publicWorkspaces", allEntries = true) })
 	public WorkspaceResponse updateWorkspace(int workspaceId, UpdateWorkspaceRequest request, int requestingUserId) {
 		Workspace workspace = findWorkspaceById(workspaceId);
 
@@ -129,6 +136,9 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 	// ─── Delete ───────────────────────────────────────────────────────────────
 
 	@Override
+	@Caching(evict = { @CacheEvict(value = "workspace", key = "#workspaceId"),
+			@CacheEvict(value = "publicWorkspaces", allEntries = true),
+			@CacheEvict(value = "userWorkspaces", allEntries = true) })
 	public void deleteWorkspace(int workspaceId, int requestingUserId) {
 		Workspace workspace = findWorkspaceById(workspaceId);
 
