@@ -1,0 +1,9 @@
+.git
+.metadata
+.vscode
+flowboard-frontend
+**/target
+**/build
+**/.settings
+**/*.log
+node_modules

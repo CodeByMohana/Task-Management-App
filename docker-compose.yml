@@ -1,0 +1,230 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: flowboard-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - flowboard
+
+  redis:
+    image: redis:7.4
+    container_name: flowboard-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - flowboard
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: flowboard-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - flowboard
+
+  server:
+    image: flowboard-server:local
+    container_name: flowboard-server
+    ports:
+      - "8761:8761"
+    environment:
+      EUREKA_INSTANCE_HOSTNAME: server
+    restart: unless-stopped
+    networks:
+      - flowboard
+
+  api-gateway:
+    image: flowboard-api-gateway:local
+    container_name: flowboard-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-before-real-deployment}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:4200}
+    depends_on:
+      - server
+    restart: unless-stopped
+    networks:
+      - flowboard
+
+  auth-service:
+    image: flowboard-auth-service:local
+    container_name: flowboard-auth-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flowboard_auth?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root123
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://server:8761/eureka/
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-before-real-deployment}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      server:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - flowboard
+
+  workspace-service:
+    image: flowboard-workspace-service:local
+    container_name: flowboard-workspace-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flowboard_workspace?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root123
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-before-real-deployment}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      server:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - flowboard
+
+  board-service:
+    image: flowboard-board-service:local
+    container_name: flowboard-board-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flowboard_board?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root123
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-before-real-deployment}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      server:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - flowboard
+
+  card-service:
+    image: flowboard-card-service:local
+    container_name: flowboard-card-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flowboard_card?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root123
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-before-real-deployment}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      server:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - flowboard
+
+  comment-service:
+    image: flowboard-comment-service:local
+    container_name: flowboard-comment-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flowboard_comment?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root123
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-before-real-deployment}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      server:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - flowboard
+
+  label-service:
+    image: flowboard-label-service:local
+    container_name: flowboard-label-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flowboard_label?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root123
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-before-real-deployment}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      server:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - flowboard
+
+  notification-service:
+    image: flowboard-notification-service:local
+    container_name: flowboard-notification-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flowboard_notification?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root123
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://server:8761/eureka/
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-before-real-deployment}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      server:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - flowboard
+
+volumes:
+  mysql-data:
+  rabbitmq-data:
+
+networks:
+  flowboard:
+    driver: bridge
