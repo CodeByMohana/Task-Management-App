@@ -75,8 +75,6 @@ services:
       - flowboard
 
   auth-service:
-    build:
-      context: ./auth-service
     image: flowboard-auth-service:local
     container_name: flowboard-auth-service
     environment:
@@ -93,6 +91,11 @@ services:
       JWT_ACCESS_TOKEN_EXPIRY_MS: 900000
       JWT_REFRESH_TOKEN_EXPIRY_MS: 604800000
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+      OAUTH2_REDIRECT_BASE_URL: ${OAUTH2_REDIRECT_BASE_URL:-http://localhost:8080}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
     depends_on:
       mysql:
         condition: service_healthy
