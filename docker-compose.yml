@@ -78,6 +78,7 @@ services:
     image: flowboard-auth-service:local
     container_name: flowboard-auth-service
     environment:
+      SERVER_PORT: 8081
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flowboard_auth?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root123
@@ -87,6 +88,8 @@ services:
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-before-real-deployment}
+      JWT_ACCESS_TOKEN_EXPIRY_MS: 900000
+      JWT_REFRESH_TOKEN_EXPIRY_MS: 604800000
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
     depends_on:
       mysql:
