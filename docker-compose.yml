@@ -75,6 +75,8 @@ services:
       - flowboard
 
   auth-service:
+    build:
+      context: ./auth-service
     image: flowboard-auth-service:local
     container_name: flowboard-auth-service
     environment:
@@ -111,12 +113,18 @@ services:
       SPRING_DATASOURCE_PASSWORD: root123
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://server:8761/eureka/
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-before-real-deployment}
     depends_on:
       mysql:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       server:
         condition: service_started
@@ -150,9 +158,15 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root123
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://server:8761/eureka/
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-before-real-deployment}
     depends_on:
       mysql:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       server:
         condition: service_started
@@ -168,9 +182,15 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root123
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://server:8761/eureka/
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-before-real-deployment}
     depends_on:
       mysql:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       server:
         condition: service_started

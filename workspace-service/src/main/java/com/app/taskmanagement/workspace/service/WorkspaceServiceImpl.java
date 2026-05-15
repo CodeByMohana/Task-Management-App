@@ -3,8 +3,6 @@ package com.app.taskmanagement.workspace.service;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,7 +68,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
 	@Override
 	@Transactional(readOnly = true) // readOnly = true → DB optimization, no write locks needed
-	@Cacheable(value = "workspace", key = "#workspaceId + '_' + #requestingUserId")
 	public WorkspaceResponse getWorkspace(int workspaceId, int requestingUserId) {
 		Workspace workspace = findWorkspaceById(workspaceId);
 
@@ -87,7 +84,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
 	@Override
 	@Transactional(readOnly = true)
-	@Cacheable(value = "userWorkspaces", key = "#userId")
 	public List<WorkspaceResponse> getMyWorkspaces(int userId) {
 		// Fetch all workspaces where this user is a member
 		return new ArrayList<>(workspaceRepository.findAllByMemberUserId(userId).stream()
@@ -97,7 +93,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
 	@Override
 	@Transactional(readOnly = true)
-	@Cacheable(value = "publicWorkspaces")
 	public List<WorkspaceResponse> getPublicWorkspaces() {
 		return new ArrayList<>(
 				workspaceRepository.findAllPublic().stream().map(w -> WorkspaceResponse.from(w, false)).toList());
@@ -106,8 +101,9 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 	// ─── Update ───────────────────────────────────────────────────────────────
 
 	@Override
-	@Caching(put = { @CachePut(value = "workspace", key = "#workspaceId") }, evict = {
-			@CacheEvict(value = "publicWorkspaces", allEntries = true) })
+	@Caching(evict = { @CacheEvict(value = "workspace", allEntries = true),
+			@CacheEvict(value = "publicWorkspaces", allEntries = true),
+			@CacheEvict(value = "userWorkspaces", allEntries = true) })
 	public WorkspaceResponse updateWorkspace(int workspaceId, UpdateWorkspaceRequest request, int requestingUserId) {
 		Workspace workspace = findWorkspaceById(workspaceId);
 
@@ -136,7 +132,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 	// ─── Delete ───────────────────────────────────────────────────────────────
 
 	@Override
-	@Caching(evict = { @CacheEvict(value = "workspace", key = "#workspaceId"),
+	@Caching(evict = { @CacheEvict(value = "workspace", allEntries = true),
 			@CacheEvict(value = "publicWorkspaces", allEntries = true),
 			@CacheEvict(value = "userWorkspaces", allEntries = true) })
 	public void deleteWorkspace(int workspaceId, int requestingUserId) {
@@ -162,6 +158,9 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 	// ─── Member Management ────────────────────────────────────────────────────
 
 	@Override
+	@Caching(evict = { @CacheEvict(value = "workspace", allEntries = true),
+			@CacheEvict(value = "userWorkspaces", allEntries = true),
+			@CacheEvict(value = "publicWorkspaces", allEntries = true) })
 	public WorkspaceMemberResponse addMember(int workspaceId, AddMemberRequest request, int requestingUserId) {
 		findWorkspaceById(workspaceId); // ensure workspace exists
 
@@ -187,6 +186,9 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 	}
 
 	@Override
+	@Caching(evict = { @CacheEvict(value = "workspace", allEntries = true),
+			@CacheEvict(value = "userWorkspaces", allEntries = true),
+			@CacheEvict(value = "publicWorkspaces", allEntries = true) })
 	public void removeMember(int workspaceId, int targetUserId, int requestingUserId) {
 		findWorkspaceById(workspaceId);
 
@@ -218,6 +220,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 	}
 
 	@Override
+	@Caching(evict = { @CacheEvict(value = "workspace", allEntries = true),
+			@CacheEvict(value = "userWorkspaces", allEntries = true) })
 	public WorkspaceMemberResponse updateMemberRole(int workspaceId, int targetUserId, String newRole,
 			int requestingUserId) {
 		findWorkspaceById(workspaceId);

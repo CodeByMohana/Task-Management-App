@@ -16,12 +16,17 @@ public class NotificationPublisher {
     
     public void publishNotification(NotificationEvent event) {
         event.setTimestamp(LocalDateTime.now());
-        rabbitTemplate.convertAndSend(
-            RabbitMQConfig.NOTIFICATION_EXCHANGE,
-            RabbitMQConfig.NOTIFICATION_ROUTING_KEY,
-            event
-        );
-        log.info("Published notification event: {} to userId: {}", event.getEventType(), event.getRecipientUserId());
+        try {
+            rabbitTemplate.convertAndSend(
+                RabbitMQConfig.NOTIFICATION_EXCHANGE,
+                RabbitMQConfig.NOTIFICATION_ROUTING_KEY,
+                event
+            );
+            log.info("Published notification event: {} to userId: {}", event.getEventType(), event.getRecipientUserId());
+        } catch (Exception ex) {
+            log.warn("Notification publish failed for event {} to userId {}. Continuing without notification.",
+                    event.getEventType(), event.getRecipientUserId(), ex);
+        }
     }
     
     public void notifyCommentAdded(Integer recipientUserId, String cardTitle, String commentText, Integer commenterUserId, Long commentId) {
