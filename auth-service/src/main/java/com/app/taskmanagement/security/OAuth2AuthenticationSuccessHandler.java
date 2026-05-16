@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -48,22 +49,16 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 		String rawRefreshToken = refreshTokenService.createRefreshToken(user);
 
 		// Set access token as httpOnly cookie
-		Cookie accessCookie = new Cookie("accessToken", accessToken);
-		accessCookie.setHttpOnly(true);  // JS cannot read this — XSS safe
-		accessCookie.setSecure(true);   // Set to true in production (HTTPS only)
-		accessCookie.setPath("/");       // valid for all pages
-		accessCookie.setMaxAge(15 * 60); // 15 minutes — matches JWT expiry
-		accessCookie.setAttribute("SameSite", "None");
-		response.addCookie(accessCookie);
+		ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken).httpOnly(true).secure(true)
+				.sameSite("None").path("/").maxAge(15 * 60).build();
+
+		response.addHeader("Set-Cookie", accessCookie.toString());
 
 		// Set refresh token as httpOnly cookie
-		Cookie refreshCookie = new Cookie("refreshToken", rawRefreshToken);
-		refreshCookie.setHttpOnly(true);
-		refreshCookie.setSecure(true); // Set to true in production (HTTPS only)
-		refreshCookie.setPath("/");
-		refreshCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days
-		refreshCookie.setAttribute("SameSite", "None");
-		response.addCookie(refreshCookie);
+		ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", rawRefreshToken).httpOnly(true).secure(true)
+				.sameSite("None").path("/").maxAge(7 * 24 * 60 * 60).build();
+
+		response.addHeader("Set-Cookie", refreshCookie.toString());
 
 		getRedirectStrategy().sendRedirect(request, response, authorizedRedirectUri);
 	}
