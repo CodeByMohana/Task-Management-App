@@ -26,7 +26,7 @@ public class JwtCookieAuthenticationFilter implements GlobalFilter, Ordered {
 			"/swagger-ui.html", "/auth/api-docs", "/workspace/api-docs",
 			"/board/api-docs", "/card/api-docs", "/comment/api-docs", "/label/api-docs", "/notification/api-docs");
 
-	private static final List<String> PUBLIC_PREFIXES = List.of("/oauth2/", "/swagger-ui/", "/v3/api-docs/",
+	private static final List<String> PUBLIC_PREFIXES = List.of("/login/oauth2/","/oauth2/", "/swagger-ui/", "/v3/api-docs/",
 			"/auth/api-docs/", "/workspace/api-docs/", "/board/api-docs/", "/card/api-docs/", "/comment/api-docs",
 			"/label/api-docs", "/notification/api-docs");
 
