@@ -172,38 +172,40 @@ public class AuthResource {
 	private void addAccessTokenCookie(HttpServletResponse response, String token) {
 		Cookie cookie = new Cookie("accessToken", token);
 		cookie.setHttpOnly(true);
-		cookie.setSecure(false); // set true in production
+		cookie.setSecure(true); // set true in production
 		cookie.setPath("/");
 		cookie.setMaxAge(15 * 60);
-		cookie.setAttribute("SameSite", "Lax");
+		cookie.setAttribute("SameSite", "None");
 		response.addCookie(cookie);
 	}
 
 	private void addRefreshTokenCookie(HttpServletResponse response, String token) {
 		Cookie cookie = new Cookie("refreshToken", token);
 		cookie.setHttpOnly(true);
-		cookie.setSecure(false);
+		cookie.setSecure(true); // set true in production
 		cookie.setPath("/");
 		cookie.setMaxAge(7 * 24 * 60 * 60);
-		cookie.setAttribute("SameSite", "Lax");
+		cookie.setAttribute("SameSite", "None");
 		response.addCookie(cookie);
 	}
 
 	private void deleteAccessTokenCookie(HttpServletResponse response) {
 		Cookie cookie = new Cookie("accessToken", null);
 		cookie.setHttpOnly(true);
-		cookie.setSecure(false); // set true in production
+		cookie.setSecure(true); // set true in production
 		cookie.setPath("/");
 		cookie.setMaxAge(0);
+		cookie.setAttribute("SameSite", "None");
 		response.addCookie(cookie);
 	}
 
 	private void deleteRefreshTokenCookie(HttpServletResponse response) {
 		Cookie cookie = new Cookie("refreshToken", null);
 		cookie.setHttpOnly(true);
-		cookie.setSecure(false);
+		cookie.setSecure(true); // set true in production
 		cookie.setPath("/");
 		cookie.setMaxAge(0);
+		cookie.setAttribute("SameSite", "None");
 		response.addCookie(cookie);
 	}
 
