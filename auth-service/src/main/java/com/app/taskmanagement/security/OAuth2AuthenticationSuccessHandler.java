@@ -50,17 +50,19 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 		// Set access token as httpOnly cookie
 		Cookie accessCookie = new Cookie("accessToken", accessToken);
 		accessCookie.setHttpOnly(true);  // JS cannot read this — XSS safe
-		accessCookie.setSecure(false);   // Set to true in production (HTTPS only)
+		accessCookie.setSecure(true);   // Set to true in production (HTTPS only)
 		accessCookie.setPath("/");       // valid for all pages
 		accessCookie.setMaxAge(15 * 60); // 15 minutes — matches JWT expiry
+		accessCookie.setAttribute("SameSite", "None");
 		response.addCookie(accessCookie);
 
 		// Set refresh token as httpOnly cookie
 		Cookie refreshCookie = new Cookie("refreshToken", rawRefreshToken);
 		refreshCookie.setHttpOnly(true);
-		refreshCookie.setSecure(false); // Set to true in production (HTTPS only)
+		refreshCookie.setSecure(true); // Set to true in production (HTTPS only)
 		refreshCookie.setPath("/");
 		refreshCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days
+		refreshCookie.setAttribute("SameSite", "None");
 		response.addCookie(refreshCookie);
 
 		getRedirectStrategy().sendRedirect(request, response, authorizedRedirectUri);
