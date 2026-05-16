@@ -1,8 +1,7 @@
 package com.app.taskmanagement.security;
 
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,10 +12,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -26,26 +23,37 @@ public class SecurityConfig {
 	private final JwtAuthenticationFilter jwtAuthFilter;
 	private final CustomOAuth2UserService customOAuth2UserService;
 	private final OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler;
+	private final OAuth2AuthenticationFailureHandler oAuth2FailureHandler;
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.csrf(AbstractHttpConfigurer::disable)
-				// OAuth2 REQUIRES a session to store the CSRF state token between
-				// the authorization redirect and the provider callback.
-				// STATELESS breaks this — IF_REQUIRED creates a session only when needed.
 				.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 				.authorizeHttpRequests(auth -> auth
-
-						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh",
-								"/api/auth/send-otp", "/api/auth/forgot-password/reset", "/oauth2/**", "/login/**",
-								"/api/auth/users/**", // Spring Security OAuth2 internal callback path
-								"/swagger-ui/**", "/api-docs/**", "/v3/api-docs/**")
-						.permitAll().requestMatchers("/api/admin/**").hasRole("PLATFORM_ADMIN").anyRequest()
-						.authenticated())
-				.oauth2Login(oauth2 -> oauth2.authorizationEndpoint(a -> a.baseUri("/oauth2/authorize"))
-						.redirectionEndpoint(r -> r.baseUri("/oauth2/callback/*"))
+						.requestMatchers(
+								"/api/auth/register",
+								"/api/auth/login",
+								"/api/auth/refresh",
+								"/api/auth/send-otp",
+								"/api/auth/forgot-password/reset",
+								"/oauth2/**",
+								"/login/**",  // Critical for OAuth2 callback
+								"/api/auth/users/**",
+								"/swagger-ui/**",
+								"/api-docs/**",
+								"/v3/api-docs/**"
+						).permitAll()
+						.requestMatchers("/api/admin/**").hasRole("PLATFORM_ADMIN")
+						.anyRequest().authenticated()
+				)
+				.oauth2Login(oauth2 -> oauth2
+						// DO NOT override the default paths - Spring Security expects:
+						// Authorization: /oauth2/authorization/{registrationId}
+						// Callback: /login/oauth2/code/{registrationId}
 						.userInfoEndpoint(u -> u.userService(customOAuth2UserService))
-						.successHandler(oAuth2SuccessHandler))
+						.successHandler(oAuth2SuccessHandler)
+						.failureHandler(oAuth2FailureHandler)
+				)
 				.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
