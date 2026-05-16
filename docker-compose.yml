@@ -49,7 +49,7 @@ services:
       - flowboard
 
   server:
-    image: flowboard-server:local
+    image: ${SERVER_IMAGE}
     container_name: flowboard-server
     ports:
       - "8761:8761"
@@ -60,7 +60,7 @@ services:
       - flowboard
 
   api-gateway:
-    image: flowboard-api-gateway:local
+    image: ${API_GATEWAY_IMAGE}
     container_name: flowboard-api-gateway
     ports:
       - "8080:8080"
@@ -75,7 +75,7 @@ services:
       - flowboard
 
   auth-service:
-    image: flowboard-auth-service:local
+    image: ${AUTH_SERVICE_IMAGE}
     container_name: flowboard-auth-service
     environment:
       SERVER_PORT: 8081
@@ -108,7 +108,7 @@ services:
       - flowboard
 
   workspace-service:
-    image: flowboard-workspace-service:local
+    image: ${WORKSPACE_SERVICE_IMAGE}
     container_name: flowboard-workspace-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flowboard_workspace?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -136,7 +136,7 @@ services:
       - flowboard
 
   board-service:
-    image: flowboard-board-service:local
+    image: ${BOARD_SERVICE_IMAGE}
     container_name: flowboard-board-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flowboard_board?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -154,7 +154,7 @@ services:
       - flowboard
 
   card-service:
-    image: flowboard-card-service:local
+    image: ${CARD_SERVICE_IMAGE}
     container_name: flowboard-card-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flowboard_card?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -178,7 +178,7 @@ services:
       - flowboard
 
   comment-service:
-    image: flowboard-comment-service:local
+    image: ${COMMENT_SERVICE_IMAGE}
     container_name: flowboard-comment-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flowboard_comment?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -202,7 +202,7 @@ services:
       - flowboard
 
   label-service:
-    image: flowboard-label-service:local
+    image: ${LABEL_SERVICE_IMAGE}
     container_name: flowboard-label-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flowboard_label?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -220,7 +220,7 @@ services:
       - flowboard
 
   notification-service:
-    image: flowboard-notification-service:local
+    image: ${NOTIFICATION_SERVICE_IMAGE}
     container_name: flowboard-notification-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flowboard_notification?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
